@@ -12,6 +12,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @ComponentScan(Constants.Configuration.ComponentScan)
 @PropertySource(Constants.Configuration.PropertySource)
 @EnableWebMvc
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SampleJwtWebConfig extends WebMvcConfigurerAdapter {
 
 	@Override

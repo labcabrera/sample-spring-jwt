@@ -10,10 +10,21 @@ fi
 curl --dump-header $HEADERS_FILE \
   -H 'Content-Type: application/json' \
   -d '{ "username": "user", "password": "user"}' \
-	$BASE_URL/login
+  $BASE_URL/login
 
 TOKEN=$(grep Authorization $HEADERS_FILE | cut -d' ' -f3)
 
 echo "Readed JWT Token: $TOKEN"
 
+echo "Reading pets:"
+
 curl -H "Authorization: Bearer $TOKEN" $BASE_URL/api/pets
+
+echo "\nInserting pet:"
+
+curl -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Nero"}' \
+  $BASE_URL/api/pets
+
+# Esta deberia dar un 403 porque no tiene el rol adecuado
