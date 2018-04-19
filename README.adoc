@@ -23,25 +23,25 @@ que requiera de ciertos privilegios de usuario. Una vez cortada tendrá el sigui
 @Slf4j
 public class PetController {
 
-	@Autowired
-	private PetRepository repository;
+  @Autowired
+  private PetRepository repository;
 
-	@GetMapping
-	@ResponseBody
-	public List<Pet> findAll() {
-		log.debug("Searching pets");
-		return repository.findAll();
-	}
+  @GetMapping
+  @ResponseBody
+  public List<Pet> findAll() {
+    log.debug("Searching pets");
+    return repository.findAll();
+  }
 
-	@PreAuthorize("hasRole('ROLE_Publisher')")
-	@PostMapping
-	@ResponseBody
-	public Pet insert(@RequestBody Pet pet) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		log.debug("Inserting pet {} ({})", pet, authentication);
-		repository.insert(pet);
-		return pet;
-	}
+  @PreAuthorize("hasRole('ROLE_Publisher')")
+  @PostMapping
+  @ResponseBody
+  public Pet insert(@RequestBody Pet pet) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    log.debug("Inserting pet {} ({})", pet, authentication);
+    repository.insert(pet);
+    return pet;
+  }
 
 }
 ----
@@ -60,53 +60,53 @@ del siguiente modo:
 @Slf4j
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-	// some stuff here
+  // some stuff here
 
-	@Override
-	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-		throws AuthenticationException {
-		log.debug("Attempting authentication");
-		try {
-			UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
-			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userInfo.getUsername(),
-				userInfo.getPassword(), new ArrayList<>());
-			return authenticationManager.authenticate(token);
-		}
-		catch (IOException ex) {
-			throw new InternalAuthenticationServiceException("Authentication error", ex);
-		}
-	}
+  @Override
+  public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+    throws AuthenticationException {
+    log.debug("Attempting authentication");
+    try {
+      UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
+      UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userInfo.getUsername(),
+        userInfo.getPassword(), new ArrayList<>());
+      return authenticationManager.authenticate(token);
+    }
+    catch (IOException ex) {
+      throw new InternalAuthenticationServiceException("Authentication error", ex);
+    }
+  }
 
-	@Override
-	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-		Authentication auth) throws IOException, ServletException {
-		String token = createToken(auth);
-		response.addHeader(Constants.Security.HeaderAuthorization, Constants.Security.TokenBearerPrefix + " " + token);
-	}
+  @Override
+  protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+    Authentication auth) throws IOException, ServletException {
+    String token = createToken(auth);
+    response.addHeader(Constants.Security.HeaderAuthorization, Constants.Security.TokenBearerPrefix + " " + token);
+  }
 
-	private String createToken(Authentication auth) {
-		Integer expiration = env.getProperty("app.env.jwt.expiration", Integer.class);
-		String secret = env.getProperty("app.env.jwt.secret");
-		Date now = timeStampProvider.getCurrentDate();
-		Date expirationDate = new DateTime(now).plusMinutes(expiration).toDate();
-		String username = ((User) auth.getPrincipal()).getUsername();
+  private String createToken(Authentication auth) {
+    Integer expiration = env.getProperty("app.env.jwt.expiration", Integer.class);
+    String secret = env.getProperty("app.env.jwt.secret");
+    Date now = timeStampProvider.getCurrentDate();
+    Date expirationDate = new DateTime(now).plusMinutes(expiration).toDate();
+    String username = ((User) auth.getPrincipal()).getUsername();
 
-		List<String> roles = new ArrayList<>();
-		for (GrantedAuthority i : auth.getAuthorities()) {
-			roles.add(i.getAuthority());
-		}
+    List<String> roles = new ArrayList<>();
+    for (GrantedAuthority i : auth.getAuthorities()) {
+      roles.add(i.getAuthority());
+    }
 
-		String token = Jwts.builder()
-			.setIssuedAt(now)
-			.setIssuer(Constants.Security.TokenIssuerInfo)
-			.setSubject(username)
-			.claim(Constants.Security.KeyClaimRoles, roles)
-			.setExpiration(expirationDate)
-			.signWith(SignatureAlgorithm.HS512, secret)
-			.compact();
+    String token = Jwts.builder()
+      .setIssuedAt(now)
+      .setIssuer(Constants.Security.TokenIssuerInfo)
+      .setSubject(username)
+      .claim(Constants.Security.KeyClaimRoles, roles)
+      .setExpiration(expirationDate)
+      .signWith(SignatureAlgorithm.HS512, secret)
+      .compact();
 
-		return token;
-	}
+    return token;
+  }
 }
 ----
 
@@ -126,64 +126,64 @@ Esto lo haremos de la siguiente manera:
 @Slf4j
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 
-	private final Environment env;
-	private final TimeStampProvider timeStampProvider;
+  private final Environment env;
+  private final TimeStampProvider timeStampProvider;
 
-	public JWTAuthorizationFilter(AuthenticationManager authManager, Environment env,
-		TimeStampProvider timeStampProvider) {
-		super(authManager);
-		this.env = env;
-		this.timeStampProvider = timeStampProvider;
-	}
+  public JWTAuthorizationFilter(AuthenticationManager authManager, Environment env,
+    TimeStampProvider timeStampProvider) {
+    super(authManager);
+    this.env = env;
+    this.timeStampProvider = timeStampProvider;
+  }
 
-	/* (non-Javadoc)
-	 * @see org.springframework.security.web.authentication.www.BasicAuthenticationFilter#doFilterInternal(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, javax.servlet.FilterChain)
-	 */
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-		throws IOException, ServletException {
+  /* (non-Javadoc)
+   * @see org.springframework.security.web.authentication.www.BasicAuthenticationFilter#doFilterInternal(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, javax.servlet.FilterChain)
+   */
+  @Override
+  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    throws IOException, ServletException {
 
-		String header = request.getHeader(Constants.Security.HeaderAuthorization);
-		if (header == null || !header.startsWith(Constants.Security.TokenBearerPrefix)) {
-			chain.doFilter(request, response);
-			return;
-		}
-		try {
-			UsernamePasswordAuthenticationToken authentication = getAuthentication(request);
-			SecurityContextHolder.getContext().setAuthentication(authentication);
-			chain.doFilter(request, response);
-		}
-		catch ...
-	}
+    String header = request.getHeader(Constants.Security.HeaderAuthorization);
+    if (header == null || !header.startsWith(Constants.Security.TokenBearerPrefix)) {
+      chain.doFilter(request, response);
+      return;
+    }
+    try {
+      UsernamePasswordAuthenticationToken authentication = getAuthentication(request);
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+      chain.doFilter(request, response);
+    }
+    catch ...
+  }
 
-	private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
-		UsernamePasswordAuthenticationToken result = null;
+  private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
+    UsernamePasswordAuthenticationToken result = null;
 
-		String header = request.getHeader(Constants.Security.HeaderAuthorization);
-		if (header != null) {
-			log.debug("JWT validation attempt");
-			String secret = env.getProperty("app.env.jwt.secret");
-			String token = header.replace(Constants.Security.TokenBearerPrefix, StringUtils.EMPTY);
+    String header = request.getHeader(Constants.Security.HeaderAuthorization);
+    if (header != null) {
+      log.debug("JWT validation attempt");
+      String secret = env.getProperty("app.env.jwt.secret");
+      String token = header.replace(Constants.Security.TokenBearerPrefix, StringUtils.EMPTY);
 
-			Jws<Claims> claims = Jwts
-				.parser()
-				.setClock(new InternalClock(timeStampProvider))
-				.setSigningKey(secret)
-				.parseClaimsJws(token);
+      Jws<Claims> claims = Jwts
+        .parser()
+        .setClock(new InternalClock(timeStampProvider))
+        .setSigningKey(secret)
+        .parseClaimsJws(token);
 
-			String user = claims.getBody().getSubject();
-			if (user != null) {
-				List<GrantedAuthority> grantedAuthorities = readGrantedAuthorities(claims);
-				result = new UsernamePasswordAuthenticationToken(user, null, grantedAuthorities);
-			}
-			else {
-				log.debug("Missing subject in JWT token");
-			}
-		}
-		return result;
-	}
+      String user = claims.getBody().getSubject();
+      if (user != null) {
+        List<GrantedAuthority> grantedAuthorities = readGrantedAuthorities(claims);
+        result = new UsernamePasswordAuthenticationToken(user, null, grantedAuthorities);
+      }
+      else {
+        log.debug("Missing subject in JWT token");
+      }
+    }
+    return result;
+  }
 
-	// more stuff here
+  // more stuff here
 
 }
 ----
@@ -204,13 +204,13 @@ con definir el siguiente bean:
 ----
 @Bean
 UserDetailsService userDetailsService() {
-	log.debug("Creating user detail service");
-	InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-	User alice = new User("alice", "alice", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Customer)));
-	User bob = new User("bob", "bob", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Publisher)));
-	manager.createUser(alice);
-	manager.createUser(bob);
-	return manager;
+  log.debug("Creating user detail service");
+  InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
+  User alice = new User("alice", "alice", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Customer)));
+  User bob = new User("bob", "bob", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Publisher)));
+  manager.createUser(alice);
+  manager.createUser(bob);
+  return manager;
 }
 ----
 
@@ -228,55 +228,55 @@ defina la configuración de seguridad de nuestra aplicación:
 @Slf4j
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-	@Autowired
-	private Environment env;
+  @Autowired
+  private Environment env;
 
-	@Autowired
-	private TimeStampProvider timeStampProvider;
+  @Autowired
+  private TimeStampProvider timeStampProvider;
 
-	@Autowired
-	private UserDetailsService userDetailsService;
+  @Autowired
+  private UserDetailsService userDetailsService;
 
-	@Override
-	protected void configure(HttpSecurity httpSecurity) throws Exception { //@formatter:off
-		log.debug("Configuring security");
-		String authorizationPath = env.getProperty("app.env.jwt.authorization.path");
-		
-		AuthenticationManager authenticationManager = authenticationManager();
-		
-		httpSecurity
-			.sessionManagement()
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				.and()
-			.cors()
-				.and()
-			.csrf()
-				.disable()
-			.authorizeRequests()
-				.antMatchers(HttpMethod.POST, authorizationPath).permitAll()
-				.anyRequest().authenticated()
-				.and()
-			.addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
-			.addFilter(new JWTAuthorizationFilter(authenticationManager, env, timeStampProvider));
-	} //@formatter:on
+  @Override
+  protected void configure(HttpSecurity httpSecurity) throws Exception { //@formatter:off
+    log.debug("Configuring security");
+    String authorizationPath = env.getProperty("app.env.jwt.authorization.path");
+    
+    AuthenticationManager authenticationManager = authenticationManager();
+    
+    httpSecurity
+      .sessionManagement()
+        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        .and()
+      .cors()
+        .and()
+      .csrf()
+        .disable()
+      .authorizeRequests()
+        .antMatchers(HttpMethod.POST, authorizationPath).permitAll()
+        .anyRequest().authenticated()
+        .and()
+      .addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
+      .addFilter(new JWTAuthorizationFilter(authenticationManager, env, timeStampProvider));
+  } //@formatter:on
 
-	@Override
-	public void configure(AuthenticationManagerBuilder auth) throws Exception {
-		log.debug("Configuring AuthenticationManager");
-		auth.userDetailsService(userDetailsService);
-	}
+  @Override
+  public void configure(AuthenticationManagerBuilder auth) throws Exception {
+    log.debug("Configuring AuthenticationManager");
+    auth.userDetailsService(userDetailsService);
+  }
 
-	@Bean
-	CorsConfigurationSource corsConfigurationSource() {
-		final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
-		return source;
-	}
+  @Bean
+  CorsConfigurationSource corsConfigurationSource() {
+    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+    return source;
+  }
 
-	@Bean
-	BCryptPasswordEncoder bCryptPasswordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+  @Bean
+  BCryptPasswordEncoder bCryptPasswordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
 }
 ----
