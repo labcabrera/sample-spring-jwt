@@ -2,6 +2,7 @@ package org.lab.sample.jwt.core.security;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 import javax.servlet.FilterChain;
@@ -70,23 +71,27 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 		Authentication auth) throws IOException, ServletException {
+		String token = createToken(auth);
+		response.addHeader(Constants.Security.HEADER_AUTHORIZACION_KEY,
+			Constants.Security.TOKEN_BEARER_PREFIX + " " + token);
+	}
 
+	private String createToken(Authentication auth) {
 		Integer expiration = env.getProperty("app.env.jwt.expiration", Integer.class);
 		String secret = env.getProperty("app.env.jwt.secret");
 		Date now = timeStampProvider.getCurrentDate();
-		Date expirationDate = new DateTime(now).plusSeconds(expiration).toDate();
+		Date expirationDate = new DateTime(now).plusMinutes(expiration).toDate();
 		String username = ((User) auth.getPrincipal()).getUsername();
 
 		String token = Jwts.builder() //@formatter:off
 			.setIssuedAt(now)
 			.setIssuer(Constants.Security.ISSUER_INFO)
 			.setSubject(username)
+			.claim(Constants.Security.KeyClaimRoles, Arrays.asList("role1", "role2"))
 			.setExpiration(expirationDate)
 			.signWith(SignatureAlgorithm.HS512, secret)
-			.compact();
-			//@formatter:on
+			.compact(); //@formatter:on
 
-		response.addHeader(Constants.Security.HEADER_AUTHORIZACION_KEY,
-			Constants.Security.TOKEN_BEARER_PREFIX + " " + token);
+		return token;
 	}
 }

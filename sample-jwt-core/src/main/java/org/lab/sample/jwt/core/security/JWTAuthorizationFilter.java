@@ -2,6 +2,7 @@ package org.lab.sample.jwt.core.security;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -13,6 +14,8 @@ import org.lab.sample.jwt.core.Constants;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
@@ -50,13 +53,28 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 		if (header != null) {
 			String secret = env.getProperty("app.env.jwt.secret");
 			String token = header.replace(Constants.Security.TOKEN_BEARER_PREFIX, StringUtils.EMPTY);
+
 			Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
 			String user = claims.getBody().getSubject();
 			if (user != null) {
-				return new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>());
+				List<GrantedAuthority> grantedAuthorities = readGrantedAuthorities(claims);
+				return new UsernamePasswordAuthenticationToken(user, null, grantedAuthorities);
 			}
+
 			return null;
 		}
 		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<GrantedAuthority> readGrantedAuthorities(Jws<Claims> claims) {
+		List<GrantedAuthority> result = new ArrayList<>();
+		ArrayList<String> roles = (ArrayList<String>) claims.getBody().get(Constants.Security.KeyClaimRoles);
+		if (roles != null) {
+			for (String role : roles) {
+				result.add(new SimpleGrantedAuthority(role));
+			}
+		}
+		return result;
 	}
 }
