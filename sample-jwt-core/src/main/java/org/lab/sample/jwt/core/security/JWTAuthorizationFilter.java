@@ -51,8 +51,8 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 		throws IOException, ServletException {
 
-		String header = request.getHeader(Constants.Security.HEADER_AUTHORIZACION_KEY);
-		if (header == null || !header.startsWith(Constants.Security.TOKEN_BEARER_PREFIX)) {
+		String header = request.getHeader(Constants.Security.HeaderAuthorization);
+		if (header == null || !header.startsWith(Constants.Security.TokenBearerPrefix)) {
 			chain.doFilter(request, response);
 			return;
 		}
@@ -82,11 +82,11 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 	private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
 		UsernamePasswordAuthenticationToken result = null;
 
-		String header = request.getHeader(Constants.Security.HEADER_AUTHORIZACION_KEY);
+		String header = request.getHeader(Constants.Security.HeaderAuthorization);
 		if (header != null) {
 			log.debug("JWT validation attempt");
 			String secret = env.getProperty("app.env.jwt.secret");
-			String token = header.replace(Constants.Security.TOKEN_BEARER_PREFIX, StringUtils.EMPTY);
+			String token = header.replace(Constants.Security.TokenBearerPrefix, StringUtils.EMPTY);
 
 			Jws<Claims> claims = Jwts //@formatter:off
 				.parser()

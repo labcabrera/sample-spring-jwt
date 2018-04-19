@@ -1,5 +1,6 @@
 package org.lab.sample.jwt.web;
 
+import org.lab.sample.jwt.core.Constants;
 import org.lab.sample.jwt.core.security.JWTAuthenticationFilter;
 import org.lab.sample.jwt.core.security.JWTAuthorizationFilter;
 import org.lab.sample.jwt.core.services.TimeStampProvider;
@@ -58,7 +59,8 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 	@Override
 	public void configure(AuthenticationManagerBuilder auth) throws Exception {
 		log.debug("Configuring AuthenticationManager");
-		auth.inMemoryAuthentication().withUser("user").password("user").roles("USER");
+		auth.inMemoryAuthentication().withUser("alice").password("alice").roles(Constants.Roles.Customer);
+		auth.inMemoryAuthentication().withUser("bob").password("bob").roles(Constants.Roles.Publisher);
 	}
 
 	@Bean

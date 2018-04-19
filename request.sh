@@ -9,7 +9,7 @@ fi
 
 curl --dump-header $HEADERS_FILE \
   -H 'Content-Type: application/json' \
-  -d '{ "username": "user", "password": "user"}' \
+  -d '{ "username": "bob", "password": "bob"}' \
   $BASE_URL/login
 
 TOKEN=$(grep Authorization $HEADERS_FILE | cut -d' ' -f3)
@@ -22,7 +22,8 @@ curl -H "Authorization: Bearer $TOKEN" $BASE_URL/api/pets
 
 echo "\nInserting pet:"
 
-curl -H "Authorization: Bearer $TOKEN" \
+curl -v \
+  -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"name":"Nero"}' \
   $BASE_URL/api/pets

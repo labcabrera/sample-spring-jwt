@@ -2,8 +2,8 @@ package org.lab.sample.jwt.core.security;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -19,6 +19,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -72,8 +73,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 		Authentication auth) throws IOException, ServletException {
 		String token = createToken(auth);
-		response.addHeader(Constants.Security.HEADER_AUTHORIZACION_KEY,
-			Constants.Security.TOKEN_BEARER_PREFIX + " " + token);
+		response.addHeader(Constants.Security.HeaderAuthorization, Constants.Security.TokenBearerPrefix + " " + token);
 	}
 
 	private String createToken(Authentication auth) {
@@ -83,11 +83,16 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		Date expirationDate = new DateTime(now).plusMinutes(expiration).toDate();
 		String username = ((User) auth.getPrincipal()).getUsername();
 
+		List<String> roles = new ArrayList<>();
+		for (GrantedAuthority i : auth.getAuthorities()) {
+			roles.add(i.getAuthority());
+		}
+
 		String token = Jwts.builder() //@formatter:off
 			.setIssuedAt(now)
-			.setIssuer(Constants.Security.ISSUER_INFO)
+			.setIssuer(Constants.Security.TokenIssuerInfo)
 			.setSubject(username)
-			.claim(Constants.Security.KeyClaimRoles, Arrays.asList("role1", "role2"))
+			.claim(Constants.Security.KeyClaimRoles, roles)
 			.setExpiration(expirationDate)
 			.signWith(SignatureAlgorithm.HS512, secret)
 			.compact(); //@formatter:on

@@ -30,7 +30,7 @@ public class PetController {
 		return repository.findAll();
 	}
 
-	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@PreAuthorize("hasRole('ROLE_Publisher')")
 	@PostMapping
 	@ResponseBody
 	public Pet insert(@RequestBody Pet pet) {
