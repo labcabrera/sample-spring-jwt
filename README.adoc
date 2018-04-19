@@ -1,0 +1,314 @@
+= Cocinando tokens JWT con SpringFramework
+
+== Introducción
+
+Hoy les enseñaremos a preparar un rica autenticación basada en tokens JWT con perfiles de usuario
+sin Spring Boot.
+
+== Ingredientes
+
+* Una versión 4.x de SpringFramework
+* Una API rest perfilizada
+* Una cucharada de `io.jsonwebtoken:jjwt`
+
+== Preparando la receta
+
+En primer lugar cortaremos nuestra API en finas rodajitas añadiendo un método público y un método
+que requiera de ciertos privilegios de usuario. Una vez cortada tendrá el siguiente aspecto:
+
+[source,java]
+----
+@RestController
+@RequestMapping(value = "/api/pets")
+@Slf4j
+public class PetController {
+
+	@Autowired
+	private PetRepository repository;
+
+	@GetMapping
+	@ResponseBody
+	public List<Pet> findAll() {
+		log.debug("Searching pets");
+		return repository.findAll();
+	}
+
+	@PreAuthorize("hasRole('ROLE_Publisher')")
+	@PostMapping
+	@ResponseBody
+	public Pet insert(@RequestBody Pet pet) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		log.debug("Inserting pet {} ({})", pet, authentication);
+		repository.insert(pet);
+		return pet;
+	}
+
+}
+----
+
+Vemos que hemos incluído la anotación `@PreAuthorize("hasRole('ROLE_Publisher')")` para que las
+operaciones de escrituras sólo las puedan realizar determinados usuarios.
+
+== Preparando la autenticación
+
+Para la autenticación preparemos un filtro que leerá la información de usuario de una petición POST
+del siguiente modo:
+
+[source,java]
+----
+@AllArgsConstructor
+@Slf4j
+public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
+	// some stuff here
+
+	@Override
+	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+		throws AuthenticationException {
+		log.debug("Attempting authentication");
+		try {
+			UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
+			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userInfo.getUsername(),
+				userInfo.getPassword(), new ArrayList<>());
+			return authenticationManager.authenticate(token);
+		}
+		catch (IOException ex) {
+			throw new InternalAuthenticationServiceException("Authentication error", ex);
+		}
+	}
+
+	@Override
+	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+		Authentication auth) throws IOException, ServletException {
+		String token = createToken(auth);
+		response.addHeader(Constants.Security.HeaderAuthorization, Constants.Security.TokenBearerPrefix + " " + token);
+	}
+
+	private String createToken(Authentication auth) {
+		Integer expiration = env.getProperty("app.env.jwt.expiration", Integer.class);
+		String secret = env.getProperty("app.env.jwt.secret");
+		Date now = timeStampProvider.getCurrentDate();
+		Date expirationDate = new DateTime(now).plusMinutes(expiration).toDate();
+		String username = ((User) auth.getPrincipal()).getUsername();
+
+		List<String> roles = new ArrayList<>();
+		for (GrantedAuthority i : auth.getAuthorities()) {
+			roles.add(i.getAuthority());
+		}
+
+		String token = Jwts.builder()
+			.setIssuedAt(now)
+			.setIssuer(Constants.Security.TokenIssuerInfo)
+			.setSubject(username)
+			.claim(Constants.Security.KeyClaimRoles, roles)
+			.setExpiration(expirationDate)
+			.signWith(SignatureAlgorithm.HS512, secret)
+			.compact();
+
+		return token;
+	}
+}
+----
+
+Este filtro utilizará el `authenticationManager` que hemos inyectado para validar las credenciales
+suministradas. En caso de que sean correctas generará el token y lo devolverá como una cabecera
+HTTP.
+
+== Preparando la autorización
+
+De un modo similar al filtro anterior, ahora tendremos que validar la cabecera con el token que
+hemos generado anteriormente.
+
+Esto lo haremos de la siguiente manera:
+
+[source,java]
+----
+@Slf4j
+public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
+
+	private final Environment env;
+	private final TimeStampProvider timeStampProvider;
+
+	public JWTAuthorizationFilter(AuthenticationManager authManager, Environment env,
+		TimeStampProvider timeStampProvider) {
+		super(authManager);
+		this.env = env;
+		this.timeStampProvider = timeStampProvider;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.springframework.security.web.authentication.www.BasicAuthenticationFilter#doFilterInternal(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, javax.servlet.FilterChain)
+	 */
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+		throws IOException, ServletException {
+
+		String header = request.getHeader(Constants.Security.HeaderAuthorization);
+		if (header == null || !header.startsWith(Constants.Security.TokenBearerPrefix)) {
+			chain.doFilter(request, response);
+			return;
+		}
+		try {
+			UsernamePasswordAuthenticationToken authentication = getAuthentication(request);
+			SecurityContextHolder.getContext().setAuthentication(authentication);
+			chain.doFilter(request, response);
+		}
+		catch ...
+	}
+
+	private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
+		UsernamePasswordAuthenticationToken result = null;
+
+		String header = request.getHeader(Constants.Security.HeaderAuthorization);
+		if (header != null) {
+			log.debug("JWT validation attempt");
+			String secret = env.getProperty("app.env.jwt.secret");
+			String token = header.replace(Constants.Security.TokenBearerPrefix, StringUtils.EMPTY);
+
+			Jws<Claims> claims = Jwts
+				.parser()
+				.setClock(new InternalClock(timeStampProvider))
+				.setSigningKey(secret)
+				.parseClaimsJws(token);
+
+			String user = claims.getBody().getSubject();
+			if (user != null) {
+				List<GrantedAuthority> grantedAuthorities = readGrantedAuthorities(claims);
+				result = new UsernamePasswordAuthenticationToken(user, null, grantedAuthorities);
+			}
+			else {
+				log.debug("Missing subject in JWT token");
+			}
+		}
+		return result;
+	}
+
+	// more stuff here
+
+}
+----
+
+De este modo obtendremos la información del usuario y los permisos como un
+`UsernamePasswordAuthenticationToken`.
+
+== Definiendo el servicio de usuarios
+
+Para que todo esto funcione necesitaremos establecer un `UserDetailsService` para realizar la
+autenticación y obtener la información de los usuarios.
+
+En este ejemplo sencillo lo haremos utilizando usuarios en memoria, aunque este podría implementarse
+de mil maneras diferentes (bases de datos, directorios activos, etc). Para nuestro propósito basta
+con definir el siguiente bean:
+
+[source,java]
+----
+@Bean
+UserDetailsService userDetailsService() {
+	log.debug("Creating user detail service");
+	InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
+	User alice = new User("alice", "alice", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Customer)));
+	User bob = new User("bob", "bob", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Publisher)));
+	manager.createUser(alice);
+	manager.createUser(bob);
+	return manager;
+}
+----
+
+utilizando dos usuarios con diferentes roles.
+
+== Estableciendo la configuración de seguridad
+
+Y antes de tener todo esto funcionando deberemos definir el `WebSecurityConfigurerAdapter` que
+defina la configuración de seguridad de nuestra aplicación:
+
+[source,java]
+----
+@Configuration
+@EnableWebSecurity
+@Slf4j
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Autowired
+	private Environment env;
+
+	@Autowired
+	private TimeStampProvider timeStampProvider;
+
+	@Autowired
+	private UserDetailsService userDetailsService;
+
+	@Override
+	protected void configure(HttpSecurity httpSecurity) throws Exception { //@formatter:off
+		log.debug("Configuring security");
+		String authorizationPath = env.getProperty("app.env.jwt.authorization.path");
+		
+		AuthenticationManager authenticationManager = authenticationManager();
+		
+		httpSecurity
+			.sessionManagement()
+				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+				.and()
+			.cors()
+				.and()
+			.csrf()
+				.disable()
+			.authorizeRequests()
+				.antMatchers(HttpMethod.POST, authorizationPath).permitAll()
+				.anyRequest().authenticated()
+				.and()
+			.addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
+			.addFilter(new JWTAuthorizationFilter(authenticationManager, env, timeStampProvider));
+	} //@formatter:on
+
+	@Override
+	public void configure(AuthenticationManagerBuilder auth) throws Exception {
+		log.debug("Configuring AuthenticationManager");
+		auth.userDetailsService(userDetailsService);
+	}
+
+	@Bean
+	CorsConfigurationSource corsConfigurationSource() {
+		final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+		return source;
+	}
+
+	@Bean
+	BCryptPasswordEncoder bCryptPasswordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+
+}
+----
+
+Vemos que en el método `configure(HttpSecurity httpSecurity)` hacemos lo siguiente:
+
+* Hacer stateless nuestra aplicación
+* Permitir todos los accesos al endpoint donde autenticamos.
+* Requerir autenticación para el resto de llamadas
+* Deshabilitar el CSRF
+* Activar CORS
+* Incluir los filtros de autenticación comentados anteriormente
+
+== Probando que todo funciona
+
+He incluído el script _./request.sh_ que realiza llamadas a la API con los dos usuarios registrados.
+
+En el primer caso esperaremos tener un 403 en la llamada que requiere el rol _Publisher_ dado que el
+usuario _alice_ no posee dicho rol.
+
+Para obtener el token deberemos realizar una llamada como:
+
+----
+curl -v -H 'Content-Type: application/json' -d '{ "username": "alice", "password": "alice"}' http://localhost:8080/sample-jwt-web/login
+----
+
+Esto devolverá nuestro token:
+
+----
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1MjQxNDc2ODgsImlzcyI6InNhbXBsZS1qd3QtY29yZSIsInN1YiI6ImFsaWNlIiwiYXBwUm9sZXMiOlsiUk9MRV9DdXN0b21lciJdLCJleHAiOjE1MjQxNDc3NDh9.pQkK6Jwo5b1227EgrJb1CYNI4_00V3_ElENjGAyRpdZWawJUbbIVbo_h6LHHW8XRH90FTLQnLRrke2UZVr7i2A
+----
+
+Después para invocar a la api simplemente deberemos incluir esa misma cabecera en nuestra petición.
+
+Y eso es todo!

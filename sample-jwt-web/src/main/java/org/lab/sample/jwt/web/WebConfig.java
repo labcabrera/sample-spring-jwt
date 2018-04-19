@@ -45,7 +45,6 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
 		User alice = new User("alice", "alice", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Customer)));
 		User bob = new User("bob", "bob", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Publisher)));
-
 		manager.createUser(alice);
 		manager.createUser(bob);
 		return manager;

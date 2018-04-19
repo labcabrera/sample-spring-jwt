@@ -16,6 +16,7 @@ import org.lab.sample.jwt.core.model.UserInfo;
 import org.lab.sample.jwt.core.services.TimeStampProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -56,7 +57,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 			return authenticationManager.authenticate(token);
 		}
 		catch (IOException ex) {
-			throw new RuntimeException(ex);
+			throw new InternalAuthenticationServiceException("Authentication error", ex);
 		}
 	}
 
