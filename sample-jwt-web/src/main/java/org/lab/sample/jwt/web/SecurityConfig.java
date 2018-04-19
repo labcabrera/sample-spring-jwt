@@ -1,6 +1,5 @@
 package org.lab.sample.jwt.web;
 
-import org.lab.sample.jwt.core.Constants;
 import org.lab.sample.jwt.core.security.JWTAuthenticationFilter;
 import org.lab.sample.jwt.core.security.JWTAuthorizationFilter;
 import org.lab.sample.jwt.core.services.TimeStampProvider;
@@ -15,6 +14,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -25,13 +25,16 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @EnableWebSecurity
 @Slf4j
-public class WebSecurity extends WebSecurityConfigurerAdapter {
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Autowired
 	private Environment env;
 
 	@Autowired
 	private TimeStampProvider timeStampProvider;
+
+	@Autowired
+	private UserDetailsService userDetailsService;
 
 	@Override
 	protected void configure(HttpSecurity httpSecurity) throws Exception { //@formatter:off
@@ -59,8 +62,7 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 	@Override
 	public void configure(AuthenticationManagerBuilder auth) throws Exception {
 		log.debug("Configuring AuthenticationManager");
-		auth.inMemoryAuthentication().withUser("alice").password("alice").roles(Constants.Roles.Customer);
-		auth.inMemoryAuthentication().withUser("bob").password("bob").roles(Constants.Roles.Publisher);
+		auth.userDetailsService(userDetailsService);
 	}
 
 	@Bean

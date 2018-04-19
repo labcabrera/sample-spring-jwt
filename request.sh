@@ -1,31 +1,48 @@
 #!/bin/bash
 
+set -e
+
 BASE_URL="http://localhost:8080/sample-jwt-web"
 HEADERS_FILE="response-headers.txt"
 
-if [ -f $HEADERS_FILE ] ; then
-  rm $HEADERS_FILE
-fi
+function cleanUpHeadersFile {
+  if [ -f $HEADERS_FILE ] ; then
+    rm $HEADERS_FILE
+  fi
+}
 
-curl --dump-header $HEADERS_FILE \
-  -H 'Content-Type: application/json' \
-  -d '{ "username": "bob", "password": "bob"}' \
-  $BASE_URL/login
+function requestToken {
+  echo "Request token $1:$2"
+  cleanUpHeadersFile
 
-TOKEN=$(grep Authorization $HEADERS_FILE | cut -d' ' -f3)
+  curl --dump-header $HEADERS_FILE \
+    -H 'Content-Type: application/json' \
+    -d '{ "username": "'$1'", "password": "'$2'"}' \
+    $BASE_URL/login
 
-echo "Readed JWT Token: $TOKEN"
+  TOKEN=$(grep Authorization $HEADERS_FILE | cut -d' ' -f3)
 
-echo "Reading pets:"
+  cleanUpHeadersFile
 
-curl -H "Authorization: Bearer $TOKEN" $BASE_URL/api/pets
+  echo "Obtained token: $TOKEN" 
+}
 
-echo "\nInserting pet:"
+function readPets {
+  echo "Reading pets"
+  curl -H "Authorization: Bearer $TOKEN" $BASE_URL/api/pets
+  echo
+}
 
-curl -v \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"Nero"}' \
-  $BASE_URL/api/pets
+function postPet {
+  echo "Posting pet"
+  curl -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"name":"Nero"}' $BASE_URL/api/pets
+  echo
+}
 
-# Esta deberia dar un 403 porque no tiene el rol adecuado
+requestToken "alice" "alice"
+readPets
+postPet
+
+requestToken "bob" "bob"
+readPets
+postPet

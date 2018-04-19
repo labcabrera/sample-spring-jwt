@@ -23,7 +23,7 @@ public class ApplicationExceptionHandler extends ResponseEntityExceptionHandler 
 
 		HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 		String message = ex.getMessage();
-		String code = String.valueOf(status.ordinal());
+		String code = String.valueOf(status.value());
 
 		if (AccessDeniedException.class.isAssignableFrom(ex.getClass())) {
 			status = HttpStatus.FORBIDDEN;
