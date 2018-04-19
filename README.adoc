@@ -89,7 +89,9 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     Authentication auth) throws IOException, ServletException {
     String token = createToken(auth);
-    response.addHeader(Constants.Security.HeaderAuthorization, Constants.Security.TokenBearerPrefix + " " + token);
+    response.addHeader(
+      Constants.Security.HeaderAuthorization,
+      Constants.Security.TokenBearerPrefix + " " + token);
   }
 
   private String createToken(Authentication auth) {
@@ -311,6 +313,6 @@ Esto devolverá nuestro token:
 Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1MjQxNDc2ODgsImlzcyI6InNhbXBsZS1qd3QtY29yZSIsInN1YiI6ImFsaWNlIiwiYXBwUm9sZXMiOlsiUk9MRV9DdXN0b21lciJdLCJleHAiOjE1MjQxNDc3NDh9.pQkK6Jwo5b1227EgrJb1CYNI4_00V3_ElENjGAyRpdZWawJUbbIVbo_h6LHHW8XRH90FTLQnLRrke2UZVr7i2A
 ----
 
-Después para invocar a la api simplemente deberemos incluir esa misma cabecera en nuestra petición.
+Después para invocar a la API simplemente deberemos incluir esa misma cabecera en nuestra petición.
 
 Y eso es todo!
