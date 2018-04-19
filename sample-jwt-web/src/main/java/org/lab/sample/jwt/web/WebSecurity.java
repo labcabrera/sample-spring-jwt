@@ -2,6 +2,7 @@ package org.lab.sample.jwt.web;
 
 import org.lab.sample.jwt.core.security.JWTAuthenticationFilter;
 import org.lab.sample.jwt.core.security.JWTAuthorizationFilter;
+import org.lab.sample.jwt.core.services.TimeStampProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,9 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private Environment env;
 
+	@Autowired
+	private TimeStampProvider timeStampProvider;
+
 	@Override
 	protected void configure(HttpSecurity httpSecurity) throws Exception { //@formatter:off
 		log.debug("Configuring security");
@@ -47,7 +51,7 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 				.antMatchers(HttpMethod.POST, authorizationPath).permitAll()
 				.anyRequest().authenticated()
 				.and()
-			.addFilter(new JWTAuthenticationFilter(authenticationManager, env))
+			.addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
 			.addFilter(new JWTAuthorizationFilter(authenticationManager, env));
 	} //@formatter:on
 

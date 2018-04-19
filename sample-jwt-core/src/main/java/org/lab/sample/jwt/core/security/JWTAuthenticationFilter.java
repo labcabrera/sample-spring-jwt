@@ -2,7 +2,6 @@ package org.lab.sample.jwt.core.security;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 
 import javax.servlet.FilterChain;
@@ -10,7 +9,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.joda.time.DateTime;
+import org.lab.sample.jwt.core.Constants;
 import org.lab.sample.jwt.core.model.UserInfo;
+import org.lab.sample.jwt.core.services.TimeStampProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,18 +25,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@AllArgsConstructor
 @Slf4j
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
 	private final AuthenticationManager authenticationManager;
 	private final Environment env;
-
-	public JWTAuthenticationFilter(AuthenticationManager authenticationManager, Environment env) {
-		this.authenticationManager = authenticationManager;
-		this.env = env;
-	}
+	private final TimeStampProvider timeStampProvider;
 
 	/*
 	 * (non-Javadoc)
@@ -70,19 +70,23 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 		Authentication auth) throws IOException, ServletException {
-		Long expirationSg = env.getProperty("app.env.jwt.expiration", Long.class);
+
+		Integer expiration = env.getProperty("app.env.jwt.expiration", Integer.class);
 		String secret = env.getProperty("app.env.jwt.secret");
-		Date now = Calendar.getInstance().getTime();
-		Date expiration = new Date(now.getTime() + expirationSg * 60000);
+		Date now = timeStampProvider.getCurrentDate();
+		Date expirationDate = new DateTime(now).plusSeconds(expiration).toDate();
 		String username = ((User) auth.getPrincipal()).getUsername();
+
 		String token = Jwts.builder() //@formatter:off
 			.setIssuedAt(now)
-			.setIssuer(SecurityConstants.ISSUER_INFO)
+			.setIssuer(Constants.Security.ISSUER_INFO)
 			.setSubject(username)
-			.setExpiration(expiration)
+			.setExpiration(expirationDate)
 			.signWith(SignatureAlgorithm.HS512, secret)
-			.compact(); //@formatter:on
-		response.addHeader(SecurityConstants.HEADER_AUTHORIZACION_KEY,
-			SecurityConstants.TOKEN_BEARER_PREFIX + " " + token);
+			.compact();
+			//@formatter:on
+
+		response.addHeader(Constants.Security.HEADER_AUTHORIZACION_KEY,
+			Constants.Security.TOKEN_BEARER_PREFIX + " " + token);
 	}
 }

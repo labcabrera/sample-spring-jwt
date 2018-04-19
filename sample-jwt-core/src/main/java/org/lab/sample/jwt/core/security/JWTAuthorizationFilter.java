@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.lab.sample.jwt.core.Constants;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,8 +35,8 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
 		throws IOException, ServletException {
-		String header = req.getHeader(SecurityConstants.HEADER_AUTHORIZACION_KEY);
-		if (header == null || !header.startsWith(SecurityConstants.TOKEN_BEARER_PREFIX)) {
+		String header = req.getHeader(Constants.Security.HEADER_AUTHORIZACION_KEY);
+		if (header == null || !header.startsWith(Constants.Security.TOKEN_BEARER_PREFIX)) {
 			chain.doFilter(req, res);
 			return;
 		}
@@ -45,10 +46,10 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 	}
 
 	private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
-		String header = request.getHeader(SecurityConstants.HEADER_AUTHORIZACION_KEY);
+		String header = request.getHeader(Constants.Security.HEADER_AUTHORIZACION_KEY);
 		if (header != null) {
 			String secret = env.getProperty("app.env.jwt.secret");
-			String token = header.replace(SecurityConstants.TOKEN_BEARER_PREFIX, StringUtils.EMPTY);
+			String token = header.replace(Constants.Security.TOKEN_BEARER_PREFIX, StringUtils.EMPTY);
 			Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
 			String user = claims.getBody().getSubject();
 			if (user != null) {

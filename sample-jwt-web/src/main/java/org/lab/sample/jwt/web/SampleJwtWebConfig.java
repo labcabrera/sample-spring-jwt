@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.lab.sample.jwt.core.Constants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -22,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @Slf4j
-@ComponentScan("org.lab.sample.jwt")
-@PropertySource("classpath:app.properties")
+@ComponentScan(Constants.Configuration.ComponentScan)
+@PropertySource(Constants.Configuration.PropertySource)
 @EnableWebMvc
 public class SampleJwtWebConfig extends WebMvcConfigurerAdapter {
 
@@ -31,7 +32,7 @@ public class SampleJwtWebConfig extends WebMvcConfigurerAdapter {
 	public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
 		log.debug("Configuring message converters");
 		Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
-		builder.indentOutput(true).dateFormat(new SimpleDateFormat("yyyy-MM-dd"));
+		builder.indentOutput(true).dateFormat(new SimpleDateFormat(Constants.Configuration.DateFormat));
 		converters.add(new MappingJackson2HttpMessageConverter(builder.build()));
 	}
 
