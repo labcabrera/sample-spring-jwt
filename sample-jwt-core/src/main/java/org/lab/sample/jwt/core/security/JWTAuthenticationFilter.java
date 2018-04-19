@@ -70,10 +70,11 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 		Authentication auth) throws IOException, ServletException {
-		Date now = Calendar.getInstance().getTime();
-		Date expiration = new Date(now.getTime() + 60000000);
-		String username = ((User) auth.getPrincipal()).getUsername();
+		Long expirationSg = env.getProperty("app.env.jwt.expiration", Long.class);
 		String secret = env.getProperty("app.env.jwt.secret");
+		Date now = Calendar.getInstance().getTime();
+		Date expiration = new Date(now.getTime() + expirationSg * 60000);
+		String username = ((User) auth.getPrincipal()).getUsername();
 		String token = Jwts.builder() //@formatter:off
 			.setIssuedAt(now)
 			.setIssuer(SecurityConstants.ISSUER_INFO)

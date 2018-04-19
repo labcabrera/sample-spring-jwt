@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @Slf4j
-@ComponentScan("com.mapfre.dgtp.gaia.sample.jwt")
+@ComponentScan("org.lab.sample.jwt")
 @PropertySource("classpath:app.properties")
 @EnableWebMvc
 public class SampleJwtWebConfig extends WebMvcConfigurerAdapter {

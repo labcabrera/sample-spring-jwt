@@ -25,18 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WebSecurity extends WebSecurityConfigurerAdapter {
 
-	// private final UserDetailsService userDetailsService;
 	@Autowired
 	private Environment env;
-
-	// public WebSecurity(UserDetailsService userDetailsService, Environment env) {
-	// // this.userDetailsService = userDetailsService;
-	// this.env = env;
-	// }
 
 	@Override
 	protected void configure(HttpSecurity httpSecurity) throws Exception { //@formatter:off
 		log.debug("Configuring security");
+		String authorizationPath = env.getProperty("app.env.jwt.authorization.path");
 		
 		AuthenticationManager authenticationManager = authenticationManager();
 		
@@ -49,7 +44,7 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 			.csrf()
 				.disable()
 			.authorizeRequests()
-				.antMatchers(HttpMethod.POST, "/login").permitAll()
+				.antMatchers(HttpMethod.POST, authorizationPath).permitAll()
 				.anyRequest().authenticated()
 				.and()
 			.addFilter(new JWTAuthenticationFilter(authenticationManager, env))
