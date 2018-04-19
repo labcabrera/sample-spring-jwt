@@ -10,7 +10,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
 import org.lab.sample.jwt.core.Constants;
+import org.lab.sample.jwt.core.services.TimeStampProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,14 +24,19 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 
-	private Environment env;
+	private final Environment env;
+	private final TimeStampProvider timeStampProvider;
 
-	public JWTAuthorizationFilter(AuthenticationManager authManager, Environment env) {
+	public JWTAuthorizationFilter(AuthenticationManager authManager, Environment env,
+		TimeStampProvider timeStampProvider) {
 		super(authManager);
 		this.env = env;
+		this.timeStampProvider = timeStampProvider;
 	}
 
 	/* (non-Javadoc)
@@ -49,21 +56,31 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 	}
 
 	private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
+		UsernamePasswordAuthenticationToken result = null;
+
 		String header = request.getHeader(Constants.Security.HEADER_AUTHORIZACION_KEY);
 		if (header != null) {
+			log.debug("JWT validation attempt");
 			String secret = env.getProperty("app.env.jwt.secret");
 			String token = header.replace(Constants.Security.TOKEN_BEARER_PREFIX, StringUtils.EMPTY);
-
 			Jws<Claims> claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
-			String user = claims.getBody().getSubject();
-			if (user != null) {
-				List<GrantedAuthority> grantedAuthorities = readGrantedAuthorities(claims);
-				return new UsernamePasswordAuthenticationToken(user, null, grantedAuthorities);
+			DateTime expiration = new DateTime(claims.getBody().getExpiration());
+			DateTime now = new DateTime(timeStampProvider.getCurrentDate());
+			if (expiration.isBefore(now)) {
+				log.debug("Expired token {}", token);
 			}
-
-			return null;
+			else {
+				String user = claims.getBody().getSubject();
+				if (user != null) {
+					List<GrantedAuthority> grantedAuthorities = readGrantedAuthorities(claims);
+					result = new UsernamePasswordAuthenticationToken(user, null, grantedAuthorities);
+				}
+				else {
+					log.debug("Missing subject in JWT token");
+				}
+			}
 		}
-		return null;
+		return result;
 	}
 
 	@SuppressWarnings("unchecked")

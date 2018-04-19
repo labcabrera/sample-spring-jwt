@@ -52,7 +52,7 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 				.anyRequest().authenticated()
 				.and()
 			.addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
-			.addFilter(new JWTAuthorizationFilter(authenticationManager, env));
+			.addFilter(new JWTAuthorizationFilter(authenticationManager, env, timeStampProvider));
 	} //@formatter:on
 
 	@Override
