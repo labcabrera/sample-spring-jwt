@@ -124,6 +124,17 @@ Este filtro utilizará el `authenticationManager` que hemos inyectado para valid
 suministradas. En caso de que sean correctas generará el token y lo devolverá como una cabecera
 HTTP.
 
+Podríamos cambiar el comportamiento de este componente para *recibir las credenciales por seguridad
+HTTP básica* (`Authorization: Basic QWxhZGRpbjpPcGVuU2VzYW1l`) y recuperar el usuario y la password
+directamente en lugar de hacerlo vía POST con estructura JSON. Aquí preparar a gusto del consumidor.
+
+En este ejemplo al utilizar un algoritmo de tipo HMAC simplemente necesitaremos un _secret_ tanto
+para firmar el token como para validar la firma.
+
+Podría cambiarse este comportamiento. Tenemos varios ejemplos en la clase de pruebas de rendimiento
+https://github.com/labcabrera/sample-spring-jwt/blob/master/sample-jwt-core/src/test/java/org/lab/sample/jwt/core/security/AlgorithmBenchmark.java[[AlgorithmBenchmark.java]].
+
+
 == Preparando la autorización
 
 De un modo similar al filtro anterior, ahora tendremos que validar la cabecera con el token que
