@@ -247,7 +247,6 @@ defina la configuración de seguridad de nuestra aplicación:
 ----
 @Configuration
 @EnableWebSecurity
-@Slf4j
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Autowired
@@ -278,6 +277,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         .and()
       .addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
       .addFilter(new JWTAuthorizationFilter(authenticationManager, env, timeStampProvider));
+
   }
 
   @Override
@@ -291,12 +291,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
     return source;
   }
-
-  @Bean
-  BCryptPasswordEncoder bCryptPasswordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
-
 }
 ----
 
