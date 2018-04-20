@@ -346,3 +346,8 @@ momento este sólo se utiliza para las pruebas de rendimiento de los diferentes 
 (`AlgorithmBenchmark.java`).
 
 Y eso es todo!
+
+Más información interesante en:
+
+* https://jwt.io/
+* https://projects.spring.io/spring-security/
