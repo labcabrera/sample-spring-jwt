@@ -137,6 +137,11 @@ Podría cambiarse este comportamiento. Tenemos varios ejemplos de los diferentes
 clase
 https://github.com/labcabrera/sample-spring-jwt/blob/master/sample-jwt-core/src/test/java/org/lab/sample/jwt/core/security/AlgorithmBenchmark.java[AlgorithmBenchmark.java].
 
+Del mismo modo que la recuperación de las credenciales, tenemos también varios mecanismos de
+informar del token generado. En este caso simplemente lo incluímos como una cabecera de la respuesta
+aunque podría devolverse en el payload de la petición, como una cookie o de cualquier otra forma
+creativa. En estos casos simplemente sería elegir el modo más conveniente para el cliente que
+quiera hacer uso de la API.
 
 == Preparando la autorización
 
