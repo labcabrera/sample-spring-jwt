@@ -15,7 +15,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -40,7 +39,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity httpSecurity) throws Exception { //@formatter:off
 		log.debug("Configuring security");
 		String authorizationPath = env.getProperty("app.env.jwt.authorization.path");
-		
 		AuthenticationManager authenticationManager = authenticationManager();
 		
 		httpSecurity
@@ -57,6 +55,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.and()
 			.addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
 			.addFilter(new JWTAuthorizationFilter(authenticationManager, env, timeStampProvider));
+
 	} //@formatter:on
 
 	@Override
@@ -71,10 +70,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
 		return source;
 	}
-
-	@Bean
-	BCryptPasswordEncoder bCryptPasswordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
-
 }
