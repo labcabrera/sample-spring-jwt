@@ -61,13 +61,12 @@ del siguiente modo:
 @Slf4j
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-  // some stuff here
+  // some stuff here...
 
   @Override
-  public Authentication attemptAuthentication(
-      HttpServletRequest request,
-      HttpServletResponse response) throws AuthenticationException {
-
+  public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+    throws AuthenticationException {
+    log.debug("Attempting authentication");
     try {
       UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
       UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
@@ -86,8 +85,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
       HttpServletRequest request,
       HttpServletResponse response,
       FilterChain chain,
-
-    Authentication auth) throws IOException, ServletException {
+      Authentication auth) throws IOException, ServletException {
     String token = createToken(auth);
     response.addHeader(
       Constants.Security.HeaderAuthorization,
@@ -100,11 +98,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     Date now = timeStampProvider.getCurrentDate();
     Date expirationDate = new DateTime(now).plusMinutes(expiration).toDate();
     String username = ((User) auth.getPrincipal()).getUsername();
-
-    List<String> roles = new ArrayList<>();
-    for (GrantedAuthority i : auth.getAuthorities()) {
-      roles.add(i.getAuthority());
-    }
+    List<String> roles = auth.getAuthorities().stream().map(x -> x.getAuthority()).collect(Collectors.toList());
 
     String token = Jwts.builder()
       .setIssuedAt(now)
@@ -173,7 +167,9 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
       SecurityContextHolder.getContext().setAuthentication(authentication);
       chain.doFilter(request, response);
     }
-    catch...
+    catch (SignatureException ex) {
+      handleException(ex, response);
+    }
   }
 
   private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
