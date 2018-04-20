@@ -322,14 +322,17 @@ usuario _alice_ no posee dicho rol.
 
 Para obtener el token deberemos realizar una llamada como:
 
+[source,bash]
 ----
-curl -v -H 'Content-Type: application/json' -d '{ "username": "alice", "password": "alice"}' http://localhost:8080/sample-jwt-web/login
+curl -v -H 'Content-Type: application/json' \
+  -d '{ "username": "alice", "password": "alice"}' \
+  http://localhost:8080/sample-jwt-web/login
 ----
 
 Esto devolverá nuestro token:
 
 ----
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1MjQxNDc2ODgsImlzcyI6InNhbXBsZS1qd3QtY29yZSIsInN1YiI6ImFsaWNlIiwiYXBwUm9sZXMiOlsiUk9MRV9DdXN0b21lciJdLCJleHAiOjE1MjQxNDc3NDh9.pQkK6Jwo5b1227EgrJb1CYNI4_00V3_ElENjGAyRpdZWawJUbbIVbo_h6LHHW8XRH90FTLQnLRrke2UZVr7i2A
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1Mjc...NhbXBsZSQtY2HW8XRH90FTLQnLRrke2UZVr7i2A
 ----
 
 Después para invocar a la API simplemente deberemos incluir esa misma cabecera en nuestra petición.
