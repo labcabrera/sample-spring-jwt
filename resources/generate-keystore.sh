@@ -1,6 +1,7 @@
 #!/bin/bash
 
-#DNAME="CN=sample-spring-jwt, OU=labcabrera, O=labcabrera, L=Madrid, ST=Madrid, C=ES"
+set -e
+
 TARGET_FILE="sample-spring-jwt.p12"
 TARGET_FILE_CERT="sample-spring-jwt.cer"
 TARGET_PWD="changeit"
@@ -9,7 +10,10 @@ KEY_SIZE="2048"
 KEY_ALG="SHA256withRSA"
 
 if [ -f $TARGET_FILE ] ; then
-        rm $TARGET_FILE
+  rm $TARGET_FILE
+fi
+if [ -f $TARGET_FILE_CERT ] ; then
+  rm $TARGET_FILE_CERT
 fi
 
 keytool -keystore $TARGET_FILE \
@@ -20,18 +24,13 @@ keytool -keystore $TARGET_FILE \
         -genkey -alias $TARGET_ALIAS \
         -storetype pkcs12
 
-
-echo # Keystore entries
-
 keytool -list \
         -keystore $TARGET_FILE \
         -storepass $TARGET_PWD \
-				-storetype pkcs12
-
-echo # Export public key
+        -storetype pkcs12
 
 keytool -export -keystore $TARGET_FILE \
         -alias $TARGET_ALIAS \
-				-file $TARGET_FILE_CERT \
-				-storetype pkcs12 \
+        -file $TARGET_FILE_CERT \
+        -storetype pkcs12 \
         -storepass $TARGET_PWD
