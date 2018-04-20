@@ -23,10 +23,8 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Clock;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +48,6 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 		throws IOException, ServletException {
-
 		String header = request.getHeader(Constants.Security.HeaderAuthorization);
 		if (header == null || !header.startsWith(Constants.Security.TokenBearerPrefix)) {
 			chain.doFilter(request, response);
@@ -62,26 +59,12 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 			chain.doFilter(request, response);
 		}
 		catch (SignatureException ex) {
-			log.debug("Invalid JWT signature");
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		}
-		catch (ExpiredJwtException ex) {
-			log.debug("Expired JWT token");
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		}
-		catch (MalformedJwtException ex) {
-			log.debug("Malformed JWT token");
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		}
-		catch (RuntimeException ex) {
-			log.debug("Unknown JWT authorization error", ex);
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			handleException(ex, response);
 		}
 	}
 
 	private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
 		UsernamePasswordAuthenticationToken result = null;
-
 		String header = request.getHeader(Constants.Security.HeaderAuthorization);
 		if (header != null) {
 			log.debug("JWT validation attempt");
@@ -112,11 +95,14 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 		List<GrantedAuthority> result = new ArrayList<>();
 		ArrayList<String> roles = (ArrayList<String>) claims.getBody().get(Constants.Security.KeyClaimRoles);
 		if (roles != null) {
-			for (String role : roles) {
-				result.add(new SimpleGrantedAuthority(role));
-			}
+			roles.forEach(i -> result.add(new SimpleGrantedAuthority(i)));
 		}
 		return result;
+	}
+
+	private void handleException(Exception ex, HttpServletResponse response) {
+		log.debug("Invalid JWT token", ex);
+		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 	}
 
 	@AllArgsConstructor

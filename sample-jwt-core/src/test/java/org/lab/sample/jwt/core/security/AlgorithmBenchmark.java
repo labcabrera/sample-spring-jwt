@@ -42,23 +42,19 @@ public class AlgorithmBenchmark implements Runnable {
 		KeyHolder rsaKeyHolder = new KeyHolder(null, rsaKey.getPublic(), rsaKey.getPrivate());
 		KeyHolder ecKeyHolder = new KeyHolder(null, ecKey.getPublic(), ecKey.getPrivate());
 
-		for (String name : new String[] { "RS256", "RS384", "RS512" }) {
-			runAlg(SignatureAlgorithm.valueOf(name), rsaKeyHolder, count);
-		}
-		for (String name : new String[] { "HS256", "HS384", "HS512" }) {
-			runAlg(SignatureAlgorithm.valueOf(name), secretKeyHolder, count);
-		}
-		System.out.println("Following alg requires bouncycastle");
-		for (String name : new String[] { "ES256", "ES384", "ES512" }) {
-			runAlg(SignatureAlgorithm.valueOf(name), ecKeyHolder, count);
-		}
-		for (String name : new String[] { "PS256", "PS384", "PS512" }) {
-			runAlg(SignatureAlgorithm.valueOf(name), rsaKeyHolder, count);
-		}
+		Arrays.asList("RS256", "RS384", "RS512").forEach(name -> runAlg(name, rsaKeyHolder, count));
+		Arrays.asList("HS256", "HS384", "HS512").forEach(name -> runAlg(name, secretKeyHolder, count));
+
+		System.out.println("The following algorithms are not directly supported by the JDK (BouncyCastle here)");
+
+		Arrays.asList("ES256", "ES384", "ES512").forEach(name -> runAlg(name, ecKeyHolder, count));
+		Arrays.asList("PS256", "PS384", "PS512").forEach(name -> runAlg(name, rsaKeyHolder, count));
+
 	}
 
-	private void runAlg(SignatureAlgorithm alg, KeyHolder holder, int count) {
+	private void runAlg(String algName, KeyHolder holder, int count) {
 		try {
+			SignatureAlgorithm alg = SignatureAlgorithm.valueOf(algName);
 			String token = null;
 			long t0;
 			long t;

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -20,7 +21,6 @@ import org.springframework.security.authentication.InternalAuthenticationService
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -52,8 +52,10 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		log.debug("Attempting authentication");
 		try {
 			UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
-			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userInfo.getUsername(),
-				userInfo.getPassword(), new ArrayList<>());
+			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken( //@formatter:off
+				userInfo.getUsername(),
+				userInfo.getPassword(),
+				new ArrayList<>()); //@formatter:on
 			return authenticationManager.authenticate(token);
 		}
 		catch (IOException ex) {
@@ -83,11 +85,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		Date now = timeStampProvider.getCurrentDate();
 		Date expirationDate = new DateTime(now).plusMinutes(expiration).toDate();
 		String username = ((User) auth.getPrincipal()).getUsername();
-
-		List<String> roles = new ArrayList<>();
-		for (GrantedAuthority i : auth.getAuthorities()) {
-			roles.add(i.getAuthority());
-		}
+		List<String> roles = auth.getAuthorities().stream().map(x -> x.getAuthority()).collect(Collectors.toList());
 
 		String token = Jwts.builder() //@formatter:off
 			.setIssuedAt(now)
