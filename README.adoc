@@ -48,7 +48,7 @@ public class PetController {
 ----
 
 Vemos que hemos incluído la anotación `@PreAuthorize("hasRole('ROLE_Publisher')")` para que las
-operaciones de escrituras sólo las puedan realizar determinados usuarios.
+operaciones de escritura sólo las puedan realizar determinados usuarios.
 
 == Preparando la autenticación
 
@@ -296,7 +296,7 @@ Vemos que en el método `configure(HttpSecurity httpSecurity)` hacemos lo siguie
 
 == Probando que todo funciona
 
-He incluído el script _./request.sh_ que realiza llamadas a la API con los dos usuarios registrados.
+He incluído el script _./resources/request.sh_ que realiza llamadas a la API con los dos usuarios registrados.
 
 En el primer caso esperaremos tener un 403 en la llamada que requiere el rol _Publisher_ dado que el
 usuario _alice_ no posee dicho rol.
@@ -314,5 +314,13 @@ Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1MjQxNDc2ODgsImlzcyI6InNhb
 ----
 
 Después para invocar a la API simplemente deberemos incluir esa misma cabecera en nuestra petición.
+
+== Configuración del algoritmo
+
+En este ejemplo el algoritmo de firma utilizado está establecido a nivel de código aunque podría
+fácilmente sustituirse por una clave asimétrica. He creado el script
+_./resources/generate-keystore.sh_ para crear un certificado autofirmado para hacer las pruebas. De
+momento este sólo se utiliza para las pruebas de rendimiento de los diferentes algoritmos
+(`AlgorithmBenchmark.java`).
 
 Y eso es todo!
