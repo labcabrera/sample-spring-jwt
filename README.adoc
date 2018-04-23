@@ -9,9 +9,9 @@ sin Spring Boot.
 
 == Ingredientes
 
-* Una versión 4.x de SpringFramework
+* Una versión 4.x+ de SpringFramework (5.0.5 en este ejemplo)
 * Una API rest perfilizada
-* Una cucharada de `io.jsonwebtoken:jjwt`
+* Dos cucharadas de `io.jsonwebtoken:jjwt`
 * Una pizca de Spring Security
 
 == Preparando la receta
