@@ -17,9 +17,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @PropertySource(Constants.Configuration.PropertySource)
 @EnableWebMvc
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class WebConfig extends WebMvcConfigurerAdapter {
+public class WebConfig implements WebMvcConfigurer {
 
 	@Override
 	public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -40,14 +41,22 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 	}
 
 	@Bean
-	UserDetailsService userDetailsService() {
+	UserDetailsService userDetailsService(BCryptPasswordEncoder passwordEncoder) {
 		log.debug("Creating user detail service");
+
 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-		User alice = new User("alice", "alice", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Customer)));
-		User bob = new User("bob", "bob", Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Publisher)));
+		User alice = new User("alice", passwordEncoder.encode("alice"),
+			Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Customer)));
+		User bob = new User("bob", passwordEncoder.encode("bob"),
+			Arrays.asList(new SimpleGrantedAuthority("ROLE_" + Roles.Publisher)));
 		manager.createUser(alice);
 		manager.createUser(bob);
 		return manager;
+	}
+
+	@Bean
+	BCryptPasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 
 }
