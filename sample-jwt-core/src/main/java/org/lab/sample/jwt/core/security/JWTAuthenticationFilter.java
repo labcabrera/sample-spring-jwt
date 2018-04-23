@@ -70,19 +70,6 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		catch (Exception ex) {
 			throw new InternalAuthenticationServiceException("Authentication error", ex);
 		}
-		/*
-		try {
-			UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
-			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken( //@formatter:off
-				userInfo.getUsername(),
-				userInfo.getPassword(),
-				new ArrayList<>()); //@formatter:on
-			return authenticationManager.authenticate(token);
-		}
-		catch (IOException ex) {
-			throw new InternalAuthenticationServiceException("Authentication error", ex);
-		}
-		*/
 	}
 
 	/*
