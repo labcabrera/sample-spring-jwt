@@ -53,7 +53,7 @@ operaciones de escritura sólo las puedan realizar determinados usuarios.
 == Preparando la autenticación
 
 Para la autenticación preparemos un filtro que leerá la información de usuario de una petición POST
-del siguiente modo:
+del obteniendo las credenciales a través de seguridad HTTP básica:
 
 [source,java]
 ----
@@ -64,18 +64,27 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
   // some stuff here...
 
   @Override
-  public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-    throws AuthenticationException {
+  public Authentication attemptAuthentication(
+      HttpServletRequest request,
+      HttpServletResponse response) throws AuthenticationException {
     log.debug("Attempting authentication");
     try {
-      UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
+      String header = request.getHeader(Constants.Security.HeaderAuthorization);
+      Assert.notNull(header, "Missing header " + Constants.Security.HeaderAuthorization);
+      Assert.isTrue(header.startsWith("Basic "), "Expected basic authorization header");
+      String b64 = header.replace("Basic ", StringUtils.EMPTY);
+      String decoded = new String(Base64.getDecoder().decode(b64), Charset.forName("UTF-8"));
+      int index = decoded.indexOf(":");
+      Assert.isTrue(index > 0, "Invalid credentials");
+      String username = decoded.substring(0, index);
+      String password = decoded.substring(index + 1, decoded.length());
       UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-        userInfo.getUsername(),
-        userInfo.getPassword(),
+        username,
+        password,
         new ArrayList<>());
       return authenticationManager.authenticate(token);
     }
-    catch (IOException ex) {
+    catch (Exception ex) {
       throw new InternalAuthenticationServiceException("Authentication error", ex);
     }
   }
@@ -118,12 +127,6 @@ Este filtro utilizará el `authenticationManager` que hemos inyectado para valid
 suministradas. En caso de que sean correctas generará el token y lo devolverá como una cabecera
 HTTP.
 
-Podríamos cambiar el comportamiento de este componente para *recibir las credenciales por seguridad
-HTTP básica* (`Authorization: Basic QWxhZGRpbjpPcGVuU2VzYW1l`) y recuperar el usuario y la password
-directamente en lugar de hacerlo vía POST con estructura JSON. De tal modo que al final el flujo de
-peticiones se realice simplemente cambiando el _Authorization_ de básica a _Bearer token_. Aquí
-preparar a gusto del consumidor.
-
 En este ejemplo al utilizar un algoritmo de tipo HMAC simplemente necesitaremos un _secret_ tanto
 para firmar el token como para validar la firma.
 
@@ -131,11 +134,10 @@ Podría cambiarse este comportamiento. Tenemos varios ejemplos de los diferentes
 clase
 https://github.com/labcabrera/sample-spring-jwt/blob/master/sample-jwt-core/src/test/java/org/lab/sample/jwt/core/security/AlgorithmBenchmark.java[AlgorithmBenchmark.java].
 
-Del mismo modo que la recuperación de las credenciales, tenemos también varios mecanismos de
-informar del token generado. En este caso simplemente lo incluímos como una cabecera de la respuesta
-aunque podría devolverse en el payload de la petición, como una cookie o de cualquier otra forma
-creativa. En estos casos simplemente sería elegir el modo más conveniente para el cliente que
-quiera hacer uso de la API.
+Podemos informar de varios modos el token generado. En este caso simplemente lo incluímos como una
+cabecera de la respuesta aunque podría devolverse en el payload de la petición, como una cookie o de
+cualquier otra forma creativa. En estos casos simplemente sería elegir el modo más conveniente para
+el cliente que quiera hacer uso de la API.
 
 == Preparando la autorización
 

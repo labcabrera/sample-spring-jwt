@@ -1,7 +1,9 @@
 package org.lab.sample.jwt.core.security;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,9 +13,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.lab.sample.jwt.core.Constants;
-import org.lab.sample.jwt.core.model.UserInfo;
 import org.lab.sample.jwt.core.services.TimeStampProvider;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,8 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.util.Assert;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -51,6 +52,26 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		throws AuthenticationException {
 		log.debug("Attempting authentication");
 		try {
+			String header = request.getHeader(Constants.Security.HeaderAuthorization);
+			Assert.notNull(header, "Missing header " + Constants.Security.HeaderAuthorization);
+			Assert.isTrue(header.startsWith("Basic "), "Expected basic authorization header");
+			String b64 = header.replace("Basic ", StringUtils.EMPTY);
+			String decoded = new String(Base64.getDecoder().decode(b64), Charset.forName("UTF-8"));
+			int index = decoded.indexOf(":");
+			Assert.isTrue(index > 0, "Invalid credentials");
+			String username = decoded.substring(0, index);
+			String password = decoded.substring(index + 1, decoded.length());
+			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken( //@formatter:off
+				username,
+				password,
+				new ArrayList<>()); //@formatter:on
+			return authenticationManager.authenticate(token);
+		}
+		catch (Exception ex) {
+			throw new InternalAuthenticationServiceException("Authentication error", ex);
+		}
+		/*
+		try {
 			UserInfo userInfo = new ObjectMapper().readValue(request.getInputStream(), UserInfo.class);
 			UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken( //@formatter:off
 				userInfo.getUsername(),
@@ -61,6 +82,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		catch (IOException ex) {
 			throw new InternalAuthenticationServiceException("Authentication error", ex);
 		}
+		*/
 	}
 
 	/*

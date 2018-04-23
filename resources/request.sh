@@ -16,8 +16,9 @@ function requestToken {
   cleanUpHeadersFile
 
   curl --dump-header $HEADERS_FILE \
-    -H 'Content-Type: application/json' \
-    -d '{ "username": "'$1'", "password": "'$2'"}' \
+    -X POST \
+    -v \
+    -u $1:$2 \
     $BASE_URL/login
 
   TOKEN=$(grep Authorization $HEADERS_FILE | cut -d' ' -f3)
