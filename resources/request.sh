@@ -17,7 +17,6 @@ function requestToken {
 
   curl --dump-header $HEADERS_FILE \
     -X POST \
-    -v \
     -u $1:$2 \
     $BASE_URL/login
 
