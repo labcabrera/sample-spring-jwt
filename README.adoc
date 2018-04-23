@@ -1,5 +1,7 @@
 = Cocinando tokens JWT con SpringFramework
 
+image:https://travis-ci.org/labcabrera/sample-spring-jwt.svg?branch=master["Build Status", link="https://travis-ci.org/labcabrera/sample-spring-jwt"]
+
 == Introducción
 
 Hoy les enseñaremos a preparar un rica autenticación basada en tokens JWT con perfiles de usuario
