@@ -4,8 +4,8 @@ image:https://travis-ci.org/labcabrera/sample-spring-jwt.svg?branch=master["Buil
 
 == Introducción
 
-Hoy les enseñaremos a preparar un rica autenticación basada en tokens JWT con perfiles de usuario
-sin Spring Boot.
+Hoy les enseñaremos a preparar un rica autenticación basada en tokens JWT a la vieja usanza (esto
+es,usando Spring a pelo sin las bondades de Spring Boot).
 
 == Ingredientes
 
@@ -318,9 +318,7 @@ Para obtener el token deberemos realizar una llamada como:
 
 [source,bash]
 ----
-curl -v -H 'Content-Type: application/json' \
-  -d '{ "username": "alice", "password": "alice"}' \
-  http://localhost:8080/sample-jwt-web/login
+curl -u alice:alice http://localhost:8080/sample-jwt-web/login
 ----
 
 Esto devolverá nuestro token:
