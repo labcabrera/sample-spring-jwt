@@ -327,6 +327,9 @@ Esto devolverá nuestro token:
 Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1Mjc...NhbXBsZSQtY2HW8XRH90FTLQnLRrke2UZVr7i2A
 ----
 
+El token se compone de 3 cadenas eb Base64 separadas por puntos. Desde https://jwt.io/ podemos ver
+de forma sencilla el contenido del token.
+
 Después para invocar a la API simplemente deberemos incluir esa misma cabecera en nuestra petición.
 
 == Configuración del algoritmo
