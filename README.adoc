@@ -5,19 +5,19 @@ image:https://travis-ci.org/labcabrera/sample-spring-jwt.svg?branch=master["Buil
 == Introducción
 
 Hoy les enseñaremos a preparar un rica autenticación basada en tokens JWT a la vieja usanza (esto
-es,usando Spring a pelo sin las bondades de Spring Boot).
+es, usando Spring MVC a pelo sin las bondades de Spring Boot).
 
 == Ingredientes
 
 * Una versión 4.x+ de SpringFramework (5.0.5 en este ejemplo)
-* Una API rest perfilizada
+* Una API REST perfilizada
 * Dos cucharadas de `io.jsonwebtoken:jjwt`
 * Una pizca de Spring Security
 
 == Preparando la receta
 
-En primer lugar cortaremos nuestra API en finas rodajitas añadiendo un método público y un método
-que requiera de ciertos privilegios de usuario. Una vez cortada tendrá el siguiente aspecto:
+En primer lugar cortaremos nuestra API en finas lonchas añadiendo un método público y un método
+que requiera de ciertos privilegios de usuario. Una vez laminada tendrá el siguiente aspecto:
 
 [source,java]
 ----
@@ -45,7 +45,6 @@ public class PetController {
     repository.insert(pet);
     return pet;
   }
-
 }
 ----
 
@@ -318,13 +317,36 @@ Para obtener el token deberemos realizar una llamada como:
 
 [source,bash]
 ----
-curl -u alice:alice http://localhost:8080/sample-jwt-web/login
+$ curl -X POST -v -u alice:alice http://localhost:8080/sample-jwt-web/auth
+*   Trying ::1...
+* TCP_NODELAY set
+* Connected to localhost (::1) port 8080 (#0)
+* Server auth using Basic with user 'alice'
+> POST /sample-jwt-web/auth HTTP/1.1
+> Host: localhost:8080
+> Authorization: Basic YWxpY2U6YWxpY2U=
+> User-Agent: curl/7.52.1
+> Accept: */*
+> 
+< HTTP/1.1 200 
+< Authorization: Bearer eyJhbGciOiJ...Z2zHF-i5jY7MMsAA
+< X-Content-Type-Options: nosniff
+< X-XSS-Protection: 1; mode=block
+< Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+< Pragma: no-cache
+< Expires: 0
+< X-Frame-Options: DENY
+< Content-Length: 0
+< Date: Fri, 25 May 2018 13:39:27 GMT
+< 
+* Curl_http_done: called premature == 0
+
 ----
 
 Esto devolverá nuestro token:
 
 ----
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE1Mjc...NhbXBsZSQtY2HW8XRH90FTLQnLRrke2UZVr7i2A
+Authorization: Bearer eyJhbGciOiJ...Z2zHF-i5jY7MMsAA
 ----
 
 El token se compone de 3 cadenas eb Base64 separadas por puntos. Desde https://jwt.io/ podemos ver

@@ -41,6 +41,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		String authorizationPath = env.getProperty("app.env.jwt.authorization.path");
 		AuthenticationManager authenticationManager = authenticationManager();
 		
+		JWTAuthenticationFilter authenticationFilter = new JWTAuthenticationFilter(authenticationManager(), env, timeStampProvider);
+		authenticationFilter.setFilterProcessesUrl(authorizationPath);
+				
 		httpSecurity
 			.sessionManagement()
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -53,7 +56,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.antMatchers(HttpMethod.POST, authorizationPath).permitAll()
 				.anyRequest().authenticated()
 				.and()
-			.addFilter(new JWTAuthenticationFilter(authenticationManager, env, timeStampProvider))
+			.addFilter(authenticationFilter)
 			.addFilter(new JWTAuthorizationFilter(authenticationManager, env, timeStampProvider));
 
 	} //@formatter:on
