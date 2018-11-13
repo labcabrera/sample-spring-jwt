@@ -9,7 +9,7 @@ es, usando Spring MVC a pelo sin las bondades de Spring Boot).
 
 == Ingredientes
 
-* Una versión 4.x+ de SpringFramework (5.0.5 en este ejemplo)
+* Una versión 4.x+ de SpringFramework (5.1.x en este ejemplo)
 * Una API REST perfilizada
 * Dos cucharadas de `io.jsonwebtoken:jjwt`
 * Una pizca de Spring Security
